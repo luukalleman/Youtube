@@ -16,18 +16,19 @@ import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
+import sys
+import os
 
-# ----------------------------------------
-# Load environment variables
-# ----------------------------------------
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file
 load_dotenv()
 
-class Config:
-    FRESHDESK_DOMAIN = os.getenv('FRESHDESK_DOMAIN')
-    FRESHDESK_API_KEY = os.getenv('FRESHDESK_API_KEY')
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    GENERAL_DATA_PATH = 'path/to/general/company/data'
-    DELIVERY_DATA_PATH = 'path/to/custom/delivery/time/data'
+FRESHDESK_DOMAIN = os.getenv('FRESHDESK_DOMAIN')
+FRESHDESK_API_KEY = os.getenv('FRESHDESK_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+GENERAL_DATA_PATH_TICKETS = '/Users/luukalleman/Documents/youtube/tutorials/tickets/data'
+DELIVERY_DATA_PATH_TICKETS = '/Users/luukalleman/Documents/youtube/tutorials/tickets/data'
 
 # ----------------------------------------
 # Define Custom Events
@@ -79,15 +80,16 @@ class FreshdeskClient:
 class CustomerServiceBot(Workflow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.llm = OpenAI(api_key=Config.OPENAI_API_KEY)
-        self.freshdesk_client = FreshdeskClient(Config.FRESHDESK_DOMAIN, Config.FRESHDESK_API_KEY)
+        self.llm = OpenAI(api_key=OPENAI_API_KEY)
+        self.freshdesk_client = FreshdeskClient(FRESHDESK_DOMAIN, FRESHDESK_API_KEY)
         
-        general_documents = SimpleDirectoryReader(Config.GENERAL_DATA_PATH).load_data()
+        # Load the documents for querying
+        general_documents = SimpleDirectoryReader(GENERAL_DATA_PATH_TICKETS).load_data()
         self.general_index = VectorStoreIndex.from_documents(general_documents)
         self.general_retriever = VectorIndexRetriever(index=self.general_index)
         self.general_query_engine = RetrieverQueryEngine(retriever=self.general_retriever)
         
-        delivery_documents = SimpleDirectoryReader(Config.DELIVERY_DATA_PATH).load_data()
+        delivery_documents = SimpleDirectoryReader(DELIVERY_DATA_PATH_TICKETS).load_data()
         self.delivery_index = VectorStoreIndex.from_documents(delivery_documents)
         self.delivery_retriever = VectorIndexRetriever(index=self.delivery_index)
         self.delivery_query_engine = RetrieverQueryEngine(retriever=self.delivery_retriever)
@@ -100,7 +102,7 @@ class CustomerServiceBot(Workflow):
         user_query = ev.get('data')
         classification_prompt = f"Classify the following customer query into one of these categories: Product Information, Order Status, Return Policy, Technical Support, or Other: '{user_query}'"
         classification_response = await self.llm.acomplete(classification_prompt)
-        category = classification_response.content.strip()
+        category = str(classification_response)
         
         order_id_match = re.search(r'\b(ORD\d{3})\b', user_query)
         if order_id_match:
@@ -115,6 +117,7 @@ class CustomerServiceBot(Workflow):
     # ----------------------------------------
     @step()
     async def request_order_id(self, ev: RequestOrderIDEvent) -> ResponseEvent:
+        # Generate a response indicating the need for an order ID
         response = "To check the status of your order, please provide your order ID."
         return ResponseEvent(response=response)
 
@@ -152,6 +155,14 @@ class CustomerServiceBot(Workflow):
         formatted_response = f"Customer Service Bot: {ev.response}"
         return StopEvent(result=formatted_response)
 
+    # ----------------------------------------
+    # Run Workflow for a Ticket
+    # ----------------------------------------
+    async def process_ticket(self, ticket_data: Dict[str, Any]):
+        query = f"Subject: {ticket_data['subject']}\nDescription: {ticket_data['description']}"
+        result = await self.run(data=query)
+        # Create a note in Freshdesk with the bot's response
+        self.freshdesk_client.create_note(ticket_data['id'], body=str(result))
 # ----------------------------------------
 # FastAPI Setup
 # ----------------------------------------
@@ -164,32 +175,24 @@ class WebhookPayload(BaseModel):
 async def webhook(payload: WebhookPayload):
     try:
         bot = CustomerServiceBot(timeout=120, verbose=True)
-        ticket_data = payload.ticket
-        query = f"Subject: {ticket_data['subject']}\nDescription: {ticket_data['description']}"
-        
-        result = await bot.run(data=query)
-        
-        # Create a note in Freshdesk with the bot's response
-        bot.freshdesk_client.create_note(ticket_data['id'], body=str(result))
-        
+        await bot.process_ticket(payload.ticket)
         return {"message": "Response drafted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # ----------------------------------------
-# Main Entry Point (for testing)
+# Main Entry Point for Testing (Optional)
 # ----------------------------------------
 async def main():
+    # Example testing function; not needed for production
     bot = CustomerServiceBot(timeout=120, verbose=True)
-    while True:
-        user_query = input("Customer: ")
-        if user_query.lower() in ['exit', 'quit', 'bye']:
-            print("Thank you for using our customer service bot. Have a great day!")
-            break
-        result = await bot.run(data=user_query)
-        print(result)
+    ticket_data = {
+        "id": 1,
+        "subject": "Where is my order?",
+        "description": "I ordered a product last week but haven't received it yet."
+    }
+    await bot.process_ticket(ticket_data)
 
-# Running the workflow
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
