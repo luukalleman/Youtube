@@ -42,3 +42,14 @@ venv.bak/
 
 # Git config
 .gitconfig
+
+# Ignore all JavaScript files
+*.js
+
+# Ignore all TypeScript files
+*.ts
+
+
+# Ignore node_modules and npm cache
+node_modules/
+.npm/
