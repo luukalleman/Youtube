@@ -1,0 +1,44 @@
+# macOS specific files
+.DS_Store
+
+# Node.js dependencies
+node_modules/
+
+# Python related
+*.py[cod]
+__pycache__/
+*.sqlite
+*.sqlite3
+*.ipynb_checkpoints/
+
+# Environment files
+.env
+.venv/
+env/
+ENV/
+venv.bak/
+*.envrc
+
+# System files
+*.log
+*.swp
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.rej
+*.sublime-*
+
+# User-specific settings and IDE config files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# NPM cache directories
+.npm/
+.npm/_npx/
+
+# Git config
+.gitconfig
