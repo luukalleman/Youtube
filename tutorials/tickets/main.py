@@ -45,6 +45,7 @@ class OrderLookupEvent(Event):
 class RequestOrderIDEvent(Event):
     pass
 
+
 # ----------------------------------------
 # Freshdesk Client
 # ----------------------------------------
@@ -72,7 +73,7 @@ class FreshdeskClient:
             return json.loads(response.content)
         else:
             raise Exception(f"Failed to create note. Status code: {response.status_code}")
-
+        
 # ----------------------------------------
 # Define the Workflow: CustomerServiceBot
 # ----------------------------------------
@@ -88,7 +89,6 @@ class CustomerServiceBot(Workflow):
         self.general_retriever = VectorIndexRetriever(index=self.general_index)
         self.general_query_engine = RetrieverQueryEngine(retriever=self.general_retriever)
         
-
     # ----------------------------------------
     # Step: Classify Query
     # ----------------------------------------
@@ -106,7 +106,7 @@ class CustomerServiceBot(Workflow):
             return RequestOrderIDEvent()
         else:
             return QueryEvent(query=user_query, category=category)
-
+        
     # ----------------------------------------
     # Step: Request Order ID
     # ----------------------------------------
@@ -129,7 +129,7 @@ class CustomerServiceBot(Workflow):
         original_query = ev.query if hasattr(ev, 'query') else "Original query missing"
         
         return ResponseEvent(response=response, original_query=original_query)
-
+    
     # ----------------------------------------
     # Step: Lookup Order Information
     # ----------------------------------------
@@ -204,12 +204,12 @@ class CustomerServiceBot(Workflow):
         return ResponseEvent(response=response.content.strip(), original_query=original_query)
     
     # ----------------------------------------
-    # Step: Format Response
+    # Step: End State
     # ----------------------------------------
     @step()
     async def end_state(self, ev: ResponseEvent) -> StopEvent:
         return StopEvent(result=ev.response)
-
+    
 
     # ----------------------------------------
     # Run Workflow for a Ticket
@@ -234,6 +234,7 @@ class CustomerServiceBot(Workflow):
         print(result)
         # Create a note in Freshdesk with the bot's response
         self.freshdesk_client.create_note(ticket_data['id'], body=str(result))
+        
 # ----------------------------------------
 # FastAPI Setup
 # ----------------------------------------
