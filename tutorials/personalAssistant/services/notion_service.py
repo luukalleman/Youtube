@@ -1,7 +1,9 @@
 from notion_client import Client
 from models.calendar_event import CalendarEvent
 from models.email_output import EmailOutput
-from config.settings import CALENDAR_DATABASE_ID, EMAIL_DATABASE_ID
+from models.generatedContent import GeneratedContent
+
+from config.settings import CALENDAR_DATABASE_ID, EMAIL_DATABASE_ID, GENERATED_CONTENT_DATABASE_ID
 import os 
 from datetime import datetime
 
@@ -63,3 +65,20 @@ def add_email_to_notion(email: EmailOutput):
         notion.pages.create(**new_page)
     except Exception as e:
         print(f"Failed to add email to Notion: {e}")
+        
+def add_generated_content_to_notion(content: GeneratedContent):
+    print(f"Generated content: {content.content}")
+    new_page = {
+        "parent": {"database_id": GENERATED_CONTENT_DATABASE_ID},
+        "properties": {
+            "Title": {"title": [{"text": {"content": content.title}}]},
+            "Content": {"rich_text": [{"text": {"content": content.content}}]},
+            "Date": {"date": {"start": content.date}},
+        }
+    }
+    #print(f"Adding generated content like: {new_page}")
+    try:
+        notion.pages.create(**new_page)
+        print(f"Generated content '{content.title}' added to Notion successfully.")
+    except Exception as e:
+        print(f"Failed to add generated content to Notion: {e}")
