@@ -1,6 +1,6 @@
 from googleapiclient.discovery import build
 import datetime
-from pipelines.authenticate import authenticate_google_calendar
+from integrations.authenticate import authenticate_google_calendar
 
 class GoogleCalendarTool:
     def run(self) -> dict:

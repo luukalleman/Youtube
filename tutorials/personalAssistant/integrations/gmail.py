@@ -1,4 +1,4 @@
-from pipelines.authenticate import authenticate_gmail
+from integrations.authenticate import authenticate_gmail
 from googleapiclient.discovery import build
 import datetime
 import time

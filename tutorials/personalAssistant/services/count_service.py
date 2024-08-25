@@ -2,7 +2,7 @@ import requests
 from config.settings import NOTION_API_KEY
 
 
-def delete_specific_callout_blocks(page_id: str):
+def delete_callout_blocks(page_id: str):
     notion_api_url = f"https://api.notion.com/v1/blocks/{page_id}/children"
     headers = {
         "Authorization": f"Bearer {NOTION_API_KEY}",

@@ -1,7 +1,7 @@
-from models.email_output import EmailOutput
-from pipelines.gmail_integration import GmailTool
+from models.email_output import EmailStructure
+from integrations.gmail import GmailTool
 from openai import OpenAI
-from services.notion_service import add_email_to_notion
+from integrations.notion import NotionDB
 
 client = OpenAI()
 # Your background and priorities information
@@ -29,12 +29,12 @@ def process_email():
                 'Legal', 'Miscellaneous', 'General Communication', 'Follow-Up'."""},
                 {"role": "user", "content": f"Email received: {email['snippet']}. Please generate a subject, labels, drafted answer, and priority for this email."}
             ],
-            response_format=EmailOutput,
+            response_format=EmailStructure,
         )
 
         generated_email = completion.choices[0].message.parsed
         # Create EmailOutput object with generated data
-        email_output = EmailOutput(
+        email_output = EmailStructure(
             subject=generated_email.subject,
             original_email=email["snippet"],
             sender=email["from_address"],
@@ -43,4 +43,5 @@ def process_email():
             drafted_answer=generated_email.drafted_answer,
             priority=generated_email.priority
         )
-        add_email_to_notion(email_output)
+        notion = NotionDB()
+        notion.add_email_to_notion(email_output)

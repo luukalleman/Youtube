@@ -1,8 +1,7 @@
 from pydantic import BaseModel
-from datetime import datetime
-from typing import List, Literal
+from typing import Literal
 
-class CalendarEvent(BaseModel):
+class CalendarStructure(BaseModel):
     description: str
     start_date: str 
     end_date: str 

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class GeneratedContent(BaseModel):
+class ContentStructure(BaseModel):
     title: str
     content: str
     date: str 
