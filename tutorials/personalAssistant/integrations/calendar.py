@@ -21,10 +21,9 @@ class GoogleCalendarTool:
         now = datetime.datetime.utcnow()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + 'Z'
         tomorrow_start = (now + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + 'Z'
-        day_after_tomorrow_start = (now + datetime.timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + 'Z'
+        day_after_tomorrow_start = (now + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + 'Z'
 
         today_events = []
-        tomorrow_events = []
 
         for calendar_id in calendar_ids:
             events_result_today = service.events().list(calendarId=calendar_id, timeMin=today_start, timeMax=tomorrow_start,
@@ -40,15 +39,10 @@ class GoogleCalendarTool:
                 "calendar": calendar_id
             } for event in events_result_today.get('items', [])])
 
-            tomorrow_events.extend([{
-                "summary": event.get('summary'),
-                "description": event.get('description', ''),  # Fetch event description
-                "start": event['start'],
-                "end": event['end'],
-                "calendar": calendar_id
-            } for event in events_result_tomorrow.get('items', [])])
 
         return {
             "today": today_events,
-            "tomorrow": tomorrow_events
         }
+        
+tool = GoogleCalendarTool()
+tool.run()
