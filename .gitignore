@@ -10,7 +10,11 @@ __pycache__/
 *.sqlite
 *.sqlite3
 *.ipynb_checkpoints/
-
+token.pickle
+token.json
+gmail_token.*
+token_gmail*
+calendar_token*
 # Environment files
 .env
 .venv/
